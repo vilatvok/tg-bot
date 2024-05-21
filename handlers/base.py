@@ -27,18 +27,21 @@ async def greetings(message: types.Message, session: AsyncSession):
 async def popular_users(message: types.Message, session: AsyncSession):
     user_id = str(message.from_user.id)
     users = await queries.get_popular_users(session, user_id)
-    
+
     if users:
         await message.answer('🍭', reply_markup=reply.start_btns)
         for obj, rating in users:
             _rating_exist = await queries.get_rating(
-                session, 
-                user_id,
-                obj.uuid
+                session,
+                user_from_uuid=user_id,
+                user_to_uuid=obj.uuid,
             )
 
             if not _rating_exist:
-                reply_btn = main_btns(btns={'Rate': f'rate'}, user_uuid=obj.uuid)
+                reply_btn = main_btns(
+                    btns={'Rate': 'rate'},
+                    user_uuid=obj.uuid,
+                )
             else:
                 reply_btn = None
 
@@ -59,23 +62,25 @@ async def statistics(message: types.Message, session: AsyncSession):
     boys = f'{users["gender"][0][0]}: {users["gender"][0][1]}'
     girls = f'{users["gender"][1][0]}: {users["gender"][1][1]}'
     await message.answer(
-        text=f'Users registered: {users["all_users"]}\n'
+        text=(
+            f'Users registered: {users["all_users"]}\n'
             f'Active users: {users["active_users"]}\n'
-            f'{boys}\n{girls}',
-        reply_markup=reply.main_btn
+            f'{boys}\n{girls}'
+        ),
+        reply_markup=reply.main_btn,
     )
 
 
 @router.message(any_state, F.text == 'Cancel')
 async def cancel_profile(
-    message: types.Message, 
-    session: AsyncSession, 
-    state: FSMContext
+    message: types.Message,
+    session: AsyncSession,
+    state: FSMContext,
 ):
     current_state = await state.get_state()
     if not current_state:
-        return 
-    
+        return
+
     if current_state.startswith('ChangeUser'):
         await state.set_state(ChangeUser.clause)
         await message.answer('Canceled', reply_markup=reply.edit_profile_btns)
@@ -85,21 +90,25 @@ async def cancel_profile(
     user = await queries.get_user(session, str(message.from_user.id))
     if user:
         await message.answer('Canceled', reply_markup=reply.start_btns)
-        return 
-    
+        return
+
     start = reply.generate_btns('Fill in profile')
     await message.answer(
         text='Fill in your profile',
-        reply_markup=start
+        reply_markup=start,
     )
 
 
 @router.message(F.text == 'Back')
-async def back_page(message: types.Message, session: AsyncSession, state: FSMContext):
+async def back_page(
+    message: types.Message,
+    session: AsyncSession,
+    state: FSMContext,
+):
     current_state = await state.get_state()
     if not current_state:
         return
-    
+
     await state.clear()
     await get_my_profile(message, session)
 
@@ -107,8 +116,8 @@ async def back_page(message: types.Message, session: AsyncSession, state: FSMCon
 @router.message(F.text == 'Watch users')
 async def get_users(message: types.Message, session: AsyncSession):
     await message.answer(
-        '🍭',
-        reply_markup=reply.random_user_btns
+        text='🍭',
+        reply_markup=reply.random_user_btns,
     )
     await get_users_obj(message, session, entry=True)
 
@@ -122,24 +131,25 @@ async def skip_user(message: types.Message, session: AsyncSession):
 async def like_user(message: types.Message, bot: Bot, session: AsyncSession):
     obj = await get_users_obj(message, session)
     await bot.send_photo(
-        obj.uuid, 
-        photo=obj.image, 
+        obj.uuid,
+        photo=obj.image,
         caption=f'{obj.username}, {obj.age}, {obj.city}\n'
                 f'{obj.description if obj.description else ""}'
                 f'{message.from_user.mention_html()} liked your profile.',
-        parse_mode=ParseMode.HTML
+        parse_mode=ParseMode.HTML,
     )
-    
+
 
 @router.message(F.text == '😴')
 async def leave_watching(message: types.Message, session: AsyncSession):
-    await queries.update_user(session, str(message.from_user.id), {'state': False})
+    await queries.update_user(
+        session,
+        uuid=str(message.from_user.id),
+        data={'state': False},
+    )
     await message.answer(
-        text='1. Fill profile\n'
-            '2. My profile\n'
-            '3. Watch users',
+        text="""1. Fill profile
+                2. My profile
+                3. Watch users""",
         reply_markup=reply.start_btns
     )
-
-
-

@@ -24,27 +24,27 @@ async def admin_get_users(message: types.Message, session: AsyncSession):
 
 @router.callback_query(AdminCallback.filter())
 async def admin_callback(
-    callback: types.CallbackQuery, 
+    callback: types.CallbackQuery,
     callback_data: AdminCallback,
-    session: AsyncSession
+    session: AsyncSession,
 ):
     text, btns = await admin_menu(
-        level=callback_data.level, 
+        level=callback_data.level,
         session=session,
-        menu_name=callback_data.menu_name
+        menu_name=callback_data.menu_name,
     )
     await callback.message.edit_text(
         text=text,
-        reply_markup=btns
+        reply_markup=btns,
     )
     await callback.answer()
 
 
 @router.message(Command('search'))
 async def search_user(
-    message: types.Message, 
-    command: CommandObject, 
-    session: AsyncSession
+    message: types.Message,
+    command: CommandObject,
+    session: AsyncSession,
 ):
     if not command.args:
         await message.answer('Error, search must contain uuid')
@@ -60,10 +60,9 @@ async def search_user(
 @router.callback_query(F.data.startswith('delete_'))
 async def rate_user(
     callback: types.CallbackQuery,
-    session: AsyncSession 
+    session: AsyncSession,
 ):
     user = callback.data.split('_')[-1]
     await delete_user(session, user)
     await callback.answer('Deleted', show_alert=True)
     await callback.message.delete()
-    

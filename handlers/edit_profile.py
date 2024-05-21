@@ -19,29 +19,35 @@ router = Router()
 async def edit_profile(message: types.Message, state: FSMContext):
     await state.set_state(ChangeUser.clause)
     await message.answer(
-        '1. Change username\n'
-        '2. Change image\n'
-        '3. Change description\n', 
-        reply_markup=reply.edit_profile_btns
+        text="""1. Change username
+                2. Change image
+                3. Change description""",
+        reply_markup=reply.edit_profile_btns,
     )
-    
+
 
 @router.message(ChangeUser.clause)
 async def change_user(message: types.Message, state: FSMContext):
     await state.update_data(clause=message.text)
     data = (await state.get_data())
     match data['clause']:
-        case '1': 
+        case '1':
             await state.set_state(ChangeUser.username)
-            await message.answer('Enter new username', reply_markup=reply.cancel_btn)
+            await message.answer(
+                text='Enter new username',
+                reply_markup=reply.cancel_btn,
+            )
         case '2':
             await state.set_state(ChangeUser.image)
-            await message.answer('Choose new image', reply_markup=reply.cancel_btn)
+            await message.answer(
+                text='Choose new image',
+                reply_markup=reply.cancel_btn,
+            )
         case '3':
             await state.set_state(ChangeUser.description)
             await message.answer(
-                'Enter new description', 
-                reply_markup=reply.cancel_btn
+                text='Enter new description',
+                reply_markup=reply.cancel_btn,
             )
         case _:
             await message.answer('Wrong clause, try again')
@@ -49,15 +55,15 @@ async def change_user(message: types.Message, state: FSMContext):
 
 @router.message(
     or_f(
-        ChangeUser.username, 
-        ChangeUser.description, 
-        ChangeUser.image
-    )
+        ChangeUser.username,
+        ChangeUser.description,
+        ChangeUser.image,
+    ),
 )
 async def change_user_field(
-    message: types.Message, 
-    session: AsyncSession, 
-    state: FSMContext
+    message: types.Message,
+    session: AsyncSession,
+    state: FSMContext,
 ):
     current_state = await state.get_state()
     try:
@@ -71,7 +77,7 @@ async def change_user_field(
     except TypeError:
         await message.answer('Wrong format, try again')
         return
-    
+
     data = await state.get_data()
     obj = await queries.update_user(session, str(message.from_user.id), data)
 
@@ -81,25 +87,25 @@ async def change_user_field(
 
 @router.callback_query(MenuCallback.filter())
 async def rate_user(
-    callback: types.CallbackQuery, 
-    callback_data: MenuCallback, 
+    callback: types.CallbackQuery,
+    callback_data: MenuCallback,
     session: AsyncSession,
 ):
     if callback_data.menu_name == 'rate':
         await queries.set_rating(
-            session, 
-            str(callback.from_user.id), 
-            callback_data.user_uuid
+            session,
+            user_from_uuid=str(callback.from_user.id),
+            user_to_uuid=callback_data.user_uuid,
         )
         await callback.message.edit_reply_markup()
         await callback.answer('Rated')
-    
+
     elif callback_data.menu_name not in ['back', 'report']:
         await queries.send_report(
-            session, 
-            str(callback.from_user.id), 
-            callback_data.user_uuid,
-            callback_data.menu_name
+            session,
+            user_from_uuid=str(callback.from_user.id),
+            user_to_uuid=callback_data.user_uuid,
+            reason=callback_data.menu_name,
         )
         await callback.message.edit_reply_markup()
         await callback.answer('Reported')
@@ -109,6 +115,6 @@ async def rate_user(
             session=session,
             level=callback_data.level,
             user_from_id=str(callback.from_user.id),
-            user_to_id=callback_data.user_uuid
+            user_to_id=callback_data.user_uuid,
         )
         await callback.message.edit_reply_markup(reply_markup=reply)

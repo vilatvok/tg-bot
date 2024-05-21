@@ -16,16 +16,16 @@ async def users_btns(message: Message, user):
     if user:
         start = start_btns
         await message.answer(
-            text='1. Fill in profile\n'
-                '2. My profile\n'
-                '3. Watch users',
-            reply_markup=start
+            text="""1. Fill in profile
+                    2. My profile
+                    3. Watch users""",
+            reply_markup=start,
         )
     else:
         start = generate_btns('Fill in profile')
         await message.answer(
             text='Fill in your profile',
-            reply_markup=start
+            reply_markup=start,
         )
 
 

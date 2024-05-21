@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher
+
 from config import TOKEN
 from middlewares import DbMiddleware
 from database.engine import create_db, session_maker
@@ -19,7 +20,12 @@ async def on_startup(bot):
 async def main():
     dp = Dispatcher()
 
-    dp.include_routers(router, profile_router, edit_profile_router, admin_router)
+    dp.include_routers(
+        router,
+        profile_router,
+        edit_profile_router,
+        admin_router,
+    )
     dp.startup.register(on_startup)
     dp.update.middleware(DbMiddleware(session=session_maker))
 

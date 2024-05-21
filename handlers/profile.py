@@ -17,8 +17,8 @@ router = Router()
 async def set_user(message: types.Message, state: FSMContext):
     await state.set_state(AddUser.gender)
     await message.answer(
-        'Your gender',
-        reply_markup=reply.gender_btns
+        text='Your gender',
+        reply_markup=reply.gender_btns,
     )
 
 
@@ -39,13 +39,15 @@ async def set_interested(message: types.Message, state: FSMContext):
 @router.message(AddUser.age, F.text)
 async def set_age(message: types.Message, state: FSMContext):
     if not str(message.text).isnumeric():
-        await message.answer('Wrong format, age must contain only digits (10-100)')
+        await message.answer(
+            text='Wrong format, age must contain only digits (10-100)',
+        )
         return
-     
+
     if int(message.text) < 0 or int(message.text) > 100:
         await message.answer('Wrong value')
         return
-    
+
     await state.update_data(age=int(message.text))
     await state.set_state(AddUser.username)
     await message.answer('Enter username', reply_markup=reply.cancel_btn)
@@ -56,8 +58,8 @@ async def set_username(message: types.Message, state: FSMContext):
     await state.update_data(username=message.text)
     await state.set_state(AddUser.description)
     await message.answer(
-        'Enter your description: ', 
-        reply_markup=reply.skip_btns
+        text='Enter your description: ',
+        reply_markup=reply.skip_btns,
     )
 
 
@@ -81,9 +83,9 @@ async def set_image(message: types.Message, state: FSMContext):
 
 @router.message(AddUser.city, F.text)
 async def set_city(
-    message: types.Message, 
-    state: FSMContext, 
-    session: AsyncSession
+    message: types.Message,
+    state: FSMContext,
+    session: AsyncSession,
 ):
     await state.update_data(city=message.text)
     data = await state.get_data()
@@ -107,7 +109,10 @@ async def error_format(message: types.Message):
 @router.message(F.text == 'My profile')
 async def get_my_profile(message: types.Message, session: AsyncSession):
     try:
-        obj, rating = await queries.get_user(session, str(message.from_user.id))
+        obj, rating = await queries.get_user(
+            session,
+            uuid=str(message.from_user.id),
+        )
     except TypeError:
         start = reply.generate_btns('Fill in profile')
         await message.answer(

@@ -10,10 +10,10 @@ class DbMiddleware(BaseMiddleware):
         self.session = session
 
     async def __call__(
-        self, 
+        self,
         handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: Dict[str, Any]
+        data: Dict[str, Any],
     ) -> Coroutine[Any, Any, Any]:
         async with self.session() as session:
             data['session'] = session
